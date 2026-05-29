@@ -211,28 +211,24 @@ function kimpl1(kubList, n, kc1) {
             
             let ib = 1;
             let ie = ir;
-            let k0_local, k1_local, k2_local, k3_local;
+            let k1_tmp = 0, k2_tmp = 0, k3_tmp = 0;
             if (swz) {
                 const res = krang(vs, cz1, l, n, ib, ie);
                 vs = res.val;
                 cz1 = res.kubl;
-                k0_local = res.k0;
-                k1_local = res.k1;
-                k2_local = res.k2;
-                k3_local = res.k3;
+                k1_tmp = res.k1;
+                k2_tmp = res.k2;
+                k3_tmp = res.k3;
             } else {
                 const res = krang(vs, cz2, l, n, ib, ie);
                 vs = res.val;
                 cz2 = res.kubl;
-                k0_local = res.k0;
-                k1_local = res.k1;
-                k2_local = res.k2;
-                k3_local = res.k3;
+                k1_tmp = res.k1;
+                k2_tmp = res.k2;
+                k3_tmp = res.k3;
             }
             
-            ir = k1_local;      // ← исправлено: было k2
-            k2 = k2_local;
-            k3 = k3_local;
+            ir = k1_tmp;      // количество активных новых кубов
             
             if (va.length !== ic) {
                 va = new Array(ic).fill(0);
@@ -271,6 +267,10 @@ function kimpl1(kubList, n, kc1) {
             va = krangResult2.val;
             kub = krangResult2.kubl;
             
+            // Обновляем k2, k3 из второго вызова krang (сортировка VA и KUB)
+            k2 = krangResult2.k2;
+            k3 = krangResult2.k3;
+            
             ic = k3 + k2 + ir;
             const newKub = kub.slice(0, k3 + k2).concat((swz ? cz1 : cz2).slice(0, ir));
             kub = newKub;
@@ -279,6 +279,8 @@ function kimpl1(kubList, n, kc1) {
             cz2 = [];
             swz = 1;
             ir = 0;
+            // k2 и k3 сохраняются для следующей итерации? 
+            // В PL/I они сбрасываются в конце блока
             k2 = 1;
             k3 = 0;
         }
