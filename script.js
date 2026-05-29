@@ -1,7 +1,10 @@
 // script.js
 /**
  * KIMPL1 - Вычисление замыкания системы функциональных зависимостей
- * Версия 8.2 (веб-порт) с отладкой
+ * Версия 8.2 (веб-порт)
+ * 
+ * Алгоритм основан на оригинальном PL/I коде (1986)
+ * Правила: транзитивность и псевдотранзитивность
  */
 
 // ============================================================
@@ -208,22 +211,28 @@ function kimpl1(kubList, n, kc1) {
             
             let ib = 1;
             let ie = ir;
-            let krangResult;
+            let k0_local, k1_local, k2_local, k3_local;
             if (swz) {
-                krangResult = krang(vs, cz1, l, n, ib, ie);
-                vs = krangResult.val;
-                cz1 = krangResult.kubl;
-                k2 = krangResult.k2;
-                k3 = krangResult.k3;
+                const res = krang(vs, cz1, l, n, ib, ie);
+                vs = res.val;
+                cz1 = res.kubl;
+                k0_local = res.k0;
+                k1_local = res.k1;
+                k2_local = res.k2;
+                k3_local = res.k3;
             } else {
-                krangResult = krang(vs, cz2, l, n, ib, ie);
-                vs = krangResult.val;
-                cz2 = krangResult.kubl;
-                k2 = krangResult.k2;
-                k3 = krangResult.k3;
+                const res = krang(vs, cz2, l, n, ib, ie);
+                vs = res.val;
+                cz2 = res.kubl;
+                k0_local = res.k0;
+                k1_local = res.k1;
+                k2_local = res.k2;
+                k3_local = res.k3;
             }
             
-            ir = k2;
+            ir = k1_local;      // ← исправлено: было k2
+            k2 = k2_local;
+            k3 = k3_local;
             
             if (va.length !== ic) {
                 va = new Array(ic).fill(0);
@@ -561,7 +570,6 @@ function calculate() {
     console.log("originalN:", appState.originalN);
     console.log("originalKc1:", appState.originalKc1);
     
-    // Используем setTimeout, чтобы не блокировать UI
     setTimeout(() => {
         try {
             const { kub, ic } = kimpl1(appState.originalKubList, appState.originalN, appState.originalKc1);
