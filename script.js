@@ -275,17 +275,9 @@ function kimpl1(kubList, n, kc1) {
     return { kub, ic };
 }
 
-/**
- * Удаляет из XML-строки все элементы <fdsc> и комментарии FDS Closure
- */
 function removeFdscElements(xmlString) {
-    // Удаляем блоки <fdsc>...</fdsc> (включая содержимое, с любыми атрибутами и пробелами)
-    let result = xmlString.replace(/<fdsc[^>]*>[\s\S]*?<\/fdsc>/gi, '');
-    // Удаляем комментарии <!-- FDS Closure -->
-    result = result.replace(/<!--\s*FDS Closure\s*-->/gi, '');
-    // Убираем лишние пустые строки
-    result = result.replace(/\n\s*\n/g, '\n');
-    return result;
+    // Удаляем комментарии FDS Closure
+    return xmlString.replace(/<!--\s*FDS Closure\s*-->/gi, '');
 }
 
 async function parseXmlFile(file) {
@@ -295,8 +287,19 @@ async function parseXmlFile(file) {
             try {
                 let xmlString = e.target.result;
                 
-                // Удаляем старую секцию <fdsc> перед парсингом
+                // Удаляем комментарии FDS Closure
                 xmlString = removeFdscElements(xmlString);
+                
+                // === Гарантированное удаление <fdsc> через DOM ===
+                const tempParser = new DOMParser();
+                const tempDoc = tempParser.parseFromString(xmlString, "text/xml");
+                const fdscElements = tempDoc.querySelectorAll('fdsc');
+                for (const elem of fdscElements) {
+                    elem.remove();
+                }
+                const serializer = new XMLSerializer();
+                xmlString = serializer.serializeToString(tempDoc);
+                // ================================================
                 
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlString, "text/xml");
@@ -306,7 +309,6 @@ async function parseXmlFile(file) {
                     return;
                 }
                 
-                // Ищем элемент <fdsi>
                 const fdsiElement = xmlDoc.querySelector('fdsi');
                 if (!fdsiElement) {
                     reject(new Error("Не найден элемент <fdsi>"));
@@ -316,10 +318,8 @@ async function parseXmlFile(file) {
                 const tmStrings = [];
                 let maxAttr = 0;
                 
-                // Собираем все элементы, начинающиеся с 'fd', ТОЛЬКО внутри <fdsi>
-                const fdsiElements = fdsiElement.querySelectorAll('*');
-                for (const elem of fdsiElements) {
-                    if (elem.tagName.startsWith('fd')) {
+                for (const elem of fdsiElement.children) {
+                    if (elem.tagName && elem.tagName.startsWith('fd')) {
                         const tmStr = elem.textContent.trim();
                         if (!tmStr) continue;
                         tmStrings.push(tmStr);
