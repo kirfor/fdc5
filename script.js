@@ -279,7 +279,7 @@ function kimpl1(kubList, n, kc1) {
  * Удаляет из XML-строки все элементы <fdsc> и комментарии FDS Closure
  */
 function removeFdscElements(xmlString) {
-    // Удаляем блоки <fdsc>...</fdsc> (включая содержимое)
+    // Удаляем блоки <fdsc>...</fdsc> (включая содержимое, с любыми атрибутами и пробелами)
     let result = xmlString.replace(/<fdsc[^>]*>[\s\S]*?<\/fdsc>/gi, '');
     // Удаляем комментарии <!-- FDS Closure -->
     result = result.replace(/<!--\s*FDS Closure\s*-->/gi, '');
@@ -306,11 +306,20 @@ async function parseXmlFile(file) {
                     return;
                 }
                 
+                // Ищем элемент <fdsi>
+                const fdsiElement = xmlDoc.querySelector('fdsi');
+                if (!fdsiElement) {
+                    reject(new Error("Не найден элемент <fdsi>"));
+                    return;
+                }
+                
                 const tmStrings = [];
                 let maxAttr = 0;
-                const allElements = xmlDoc.getElementsByTagName("*");
-                for (const elem of allElements) {
-                    if (elem.tagName.startsWith("fd")) {
+                
+                // Собираем все элементы, начинающиеся с 'fd', ТОЛЬКО внутри <fdsi>
+                const fdsiElements = fdsiElement.querySelectorAll('*');
+                for (const elem of fdsiElements) {
+                    if (elem.tagName.startsWith('fd')) {
                         const tmStr = elem.textContent.trim();
                         if (!tmStr) continue;
                         tmStrings.push(tmStr);
@@ -457,13 +466,9 @@ async function openFile() {
         return;
     }
     
-    // Очищаем предыдущее значение
     fileInput.value = '';
-    
-    // Открываем диалог выбора файла
     fileInput.click();
     
-    // Обработчик выбора файла
     fileInput.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
