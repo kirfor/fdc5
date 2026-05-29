@@ -275,13 +275,31 @@ function kimpl1(kubList, n, kc1) {
     return { kub, ic };
 }
 
+/**
+ * Удаляет из XML-строки все элементы <fdsc> и комментарии FDS Closure
+ */
+function removeFdscElements(xmlString) {
+    // Удаляем блоки <fdsc>...</fdsc> (включая содержимое)
+    let result = xmlString.replace(/<fdsc[^>]*>[\s\S]*?<\/fdsc>/gi, '');
+    // Удаляем комментарии <!-- FDS Closure -->
+    result = result.replace(/<!--\s*FDS Closure\s*-->/gi, '');
+    // Убираем лишние пустые строки
+    result = result.replace(/\n\s*\n/g, '\n');
+    return result;
+}
+
 async function parseXmlFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
+                let xmlString = e.target.result;
+                
+                // Удаляем старую секцию <fdsc> перед парсингом
+                xmlString = removeFdscElements(xmlString);
+                
                 const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+                const xmlDoc = parser.parseFromString(xmlString, "text/xml");
                 const parserError = xmlDoc.querySelector("parsererror");
                 if (parserError) {
                     reject(new Error("Ошибка парсинга XML: " + parserError.textContent));
@@ -432,9 +450,6 @@ function updateUI() {
         `Результат не сохранён. Файл: ${appState.currentFile?.name || 'не загружен'}`;
 }
 
-// ============================================================
-// ИСПРАВЛЕННАЯ ФУНКЦИЯ OPENFILE
-// ============================================================
 async function openFile() {
     const fileInput = document.getElementById('fileInput');
     if (!fileInput) {
