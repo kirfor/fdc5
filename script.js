@@ -1,10 +1,7 @@
 // script.js
 /**
  * KIMPL1 - Вычисление замыкания системы функциональных зависимостей
- * Версия 8.2 (веб-порт)
- * 
- * Алгоритм основан на оригинальном PL/I коде (1986)
- * Правила: транзитивность и псевдотранзитивность
+ * Версия 8.2 (веб-порт) с отладкой
  */
 
 // ============================================================
@@ -109,6 +106,7 @@ function cubeToTm(cubeValue, n) {
 }
 
 function kimpl1(kubList, n, kc1) {
+    console.log("kimpl1 started", { n, kc1, kubListLength: kubList.length });
     const g = n * 2;
     let kub = kubList.slice(0, kc1);
     let ic = kc1;
@@ -123,7 +121,10 @@ function kimpl1(kubList, n, kc1) {
     let cz2 = [];
     let swz = 1;
     
+    let iteration = 0;
     while (swout) {
+        iteration++;
+        console.log(`Iteration ${iteration}, ic=${ic}, ir=${ir}, k2=${k2}, k3=${k3}`);
         let changed = false;
         const ik1 = ic - 1;
         const ih1 = k3;
@@ -181,6 +182,7 @@ function kimpl1(kubList, n, kc1) {
                             cz2.push(r);
                         }
                         changed = true;
+                        console.log("  New cube added:", cubeToStr(r, n));
                     }
                 }
             }
@@ -189,6 +191,7 @@ function kimpl1(kubList, n, kc1) {
         swi = 0;
         if (!changed) {
             swout = 0;
+            console.log("No changes, exiting");
             break;
         }
         
@@ -272,11 +275,11 @@ function kimpl1(kubList, n, kc1) {
         }
     }
     
+    console.log("kimpl1 finished, ic:", ic);
     return { kub, ic };
 }
 
 function removeFdscElements(xmlString) {
-    // Удаляем комментарии FDS Closure
     return xmlString.replace(/<!--\s*FDS Closure\s*-->/gi, '');
 }
 
@@ -286,11 +289,8 @@ async function parseXmlFile(file) {
         reader.onload = (e) => {
             try {
                 let xmlString = e.target.result;
-                
-                // Удаляем комментарии FDS Closure
                 xmlString = removeFdscElements(xmlString);
                 
-                // === Гарантированное удаление <fdsc> через DOM ===
                 const tempParser = new DOMParser();
                 const tempDoc = tempParser.parseFromString(xmlString, "text/xml");
                 const fdscElements = tempDoc.querySelectorAll('fdsc');
@@ -299,7 +299,6 @@ async function parseXmlFile(file) {
                 }
                 const serializer = new XMLSerializer();
                 xmlString = serializer.serializeToString(tempDoc);
-                // ================================================
                 
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlString, "text/xml");
@@ -557,20 +556,27 @@ function calculate() {
     }
     
     document.getElementById('statusBar').textContent = "Вычисление замыкания...";
+    console.log("=== CALCULATE START ===");
+    console.log("originalKubList:", appState.originalKubList);
+    console.log("originalN:", appState.originalN);
+    console.log("originalKc1:", appState.originalKc1);
     
+    // Используем setTimeout, чтобы не блокировать UI
     setTimeout(() => {
         try {
             const { kub, ic } = kimpl1(appState.originalKubList, appState.originalN, appState.originalKc1);
+            console.log("Result from kimpl1:", { kub, ic });
             appState.closureCubes = kub;
             appState.closureResult = kub;
             appState.resultSaved = false;
             updateUI();
             document.getElementById('statusBar').textContent = `Вычисление завершено. Всего ФЗ: ${ic}`;
         } catch (err) {
+            console.error("Error in calculate:", err);
             document.getElementById('statusBar').textContent = `Ошибка: ${err.message}`;
-            console.error(err);
+            alert("Ошибка при вычислении: " + err.message);
         }
-    }, 10);
+    }, 100);
 }
 
 // Инициализация интерфейса
