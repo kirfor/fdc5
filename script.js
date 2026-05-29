@@ -21,63 +21,45 @@ let appState = {
 };
 
 // ============================================================
-// АЛГОРИТМИЧЕСКАЯ ЧАСТЬ (полный перенос с PL/I)
+// АЛГОРИТМИЧЕСКАЯ ЧАСТЬ
 // ============================================================
 
-/**
- * KRANG - сортировка массивов (пузырьком)
- * l=0 - сортировка по убыванию (3 сверху, 0 снизу)
- * l=1 - сортировка по возрастанию
- */
 function krang(val, kubl, l, n, ib, ie) {
     let k0 = 0, k1 = 0, k2 = 0, k3 = 0;
-    
     if (!val || val.length === 0) {
         return { val, kubl, k0, k1, k2, k3 };
     }
-    
     let swapped = true;
     while (swapped) {
         swapped = false;
         for (let i = ib - 1; i < ie - 1; i++) {
             let cond = (l === 0 && val[i] < val[i + 1]) || (l === 1 && val[i] > val[i + 1]);
             if (cond) {
-                // Меняем местами val
                 [val[i], val[i + 1]] = [val[i + 1], val[i]];
-                // Меняем местами kubl
                 [kubl[i], kubl[i + 1]] = [kubl[i + 1], kubl[i]];
                 swapped = true;
             }
         }
     }
-    
-    // Подсчёт количества элементов с разными значениями
     for (let i = ib - 1; i < ie; i++) {
         if (val[i] === 1) k1++;
         else if (val[i] === 2) k2++;
         else if (val[i] === 3) k3++;
         else if (val[i] === 0) k0++;
     }
-    
     return { val, kubl, k0, k1, k2, k3 };
 }
 
-/**
- * Преобразование тм-формы в б-форму (число)
- * Пример: "1-2" -> 0b0110111111 (в зависимости от N)
- */
 function tmToCube(tmStr, n) {
     const parts = tmStr.split('-');
     const determinantPart = parts[0];
     const functionPart = parts.length > 1 ? parts[1] : "";
-    
     let determinants = [];
     if (determinantPart.includes('*')) {
         determinants = determinantPart.split('*').map(x => parseInt(x, 10));
     } else {
         determinants = determinantPart ? [parseInt(determinantPart, 10)] : [];
     }
-    
     let functions = [];
     if (functionPart) {
         if (functionPart.includes('-')) {
@@ -86,26 +68,22 @@ function tmToCube(tmStr, n) {
             functions = [parseInt(functionPart, 10)];
         }
     }
-    
     let value = 0;
     for (let i = 0; i < n; i++) {
         const attrNum = i + 1;
         let digit;
         if (determinants.includes(attrNum)) {
-            digit = 1;      // 01
+            digit = 1;
         } else if (functions.includes(attrNum)) {
-            digit = 2;      // 10
+            digit = 2;
         } else {
-            digit = 3;      // 11 (не участвует)
+            digit = 3;
         }
         value |= (digit << (i * 2));
     }
     return value;
 }
 
-/**
- * Преобразование числа (б-форма) в строку с точками
- */
 function cubeToStr(cubeValue, n) {
     const parts = [];
     for (let i = 0; i < n; i++) {
@@ -118,9 +96,6 @@ function cubeToStr(cubeValue, n) {
     return parts.join(".");
 }
 
-/**
- * Преобразование числа (б-форма) в тм-форму
- */
 function cubeToTm(cubeValue, n) {
     const determinants = [];
     const functions = [];
@@ -133,22 +108,17 @@ function cubeToTm(cubeValue, n) {
     return determinants.join("*") + "-" + functions.join("-");
 }
 
-/**
- * KIMPL1 - вычисление замыкания (точный перенос с PL/I)
- */
 function kimpl1(kubList, n, kc1) {
     const g = n * 2;
     let kub = kubList.slice(0, kc1);
     let ic = kc1;
     let va = new Array(ic).fill(1);
-    
     let k2 = 1;
     let k3 = 0;
     let ir = 0;
     let swi = 1;
     let swout = 1;
     let l = 0;
-    
     let cz1 = [];
     let cz2 = [];
     let swz = 1;
@@ -183,7 +153,6 @@ function kimpl1(kubList, n, kc1) {
                     r = r | (3 << (j * 2));
                     let swkub = 1;
                     
-                    // Проверка в KUB
                     for (let i3 = 0; i3 < ic; i3++) {
                         const z = kub[i3];
                         const yTemp = r & z;
@@ -193,7 +162,6 @@ function kimpl1(kubList, n, kc1) {
                         }
                     }
                     
-                    // Проверка в CZ
                     if (swkub && ir > 0) {
                         for (let i3 = 0; i3 < ir; i3++) {
                             const z = swz ? cz1[i3] : cz2[i3];
@@ -252,7 +220,7 @@ function kimpl1(kubList, n, kc1) {
                 k3 = krangResult.k3;
             }
             
-            ir = k2; // В оригинале IR = K1, но здесь K2 используется как счётчик
+            ir = k2;
             
             if (va.length !== ic) {
                 va = new Array(ic).fill(0);
@@ -285,9 +253,9 @@ function kimpl1(kubList, n, kc1) {
                 if (swkub && swk2 && i < va.length) va[i] = 3;
             }
             
-            let ib = 1;
-            let ie = ic;
-            const krangResult2 = krang(va, kub, l, n, ib, ie);
+            let ib2 = 1;
+            let ie2 = ic;
+            const krangResult2 = krang(va, kub, l, n, ib2, ie2);
             va = krangResult2.val;
             kub = krangResult2.kubl;
             
@@ -307,9 +275,6 @@ function kimpl1(kubList, n, kc1) {
     return { kub, ic };
 }
 
-/**
- * Разбор XML-файла (тм-форма)
- */
 async function parseXmlFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -325,8 +290,6 @@ async function parseXmlFile(file) {
                 
                 const tmStrings = [];
                 let maxAttr = 0;
-                
-                // Ищем все элементы с тегами, начинающимися на 'fd'
                 const allElements = xmlDoc.getElementsByTagName("*");
                 for (const elem of allElements) {
                     if (elem.tagName.startsWith("fd")) {
@@ -350,7 +313,7 @@ async function parseXmlFile(file) {
                 for (const tmStr of tmStrings) {
                     kubList.push(tmToCube(tmStr, n));
                 }
-                kubList.push(0); // маркер конца
+                kubList.push(0);
                 const kc1 = kubList.length - 1;
                 
                 resolve({ kubList, n, kc1 });
@@ -363,20 +326,13 @@ async function parseXmlFile(file) {
     });
 }
 
-/**
- * Запись результата в XML (для скачивания)
- */
 function writeXmlResult(originalKubList, originalKc1, kubResult, ic, n) {
     const originalSet = new Set(originalKubList.slice(0, originalKc1));
-    
     const orderedOriginal = [];
     for (let i = 0; i < originalKc1; i++) {
         const cube = originalKubList[i];
-        if (originalSet.has(cube)) {
-            orderedOriginal.push(cube);
-        }
+        if (originalSet.has(cube)) orderedOriginal.push(cube);
     }
-    
     const newCubes = kubResult.filter(cube => !originalSet.has(cube));
     const orderedResult = orderedOriginal.concat(newCubes);
     
@@ -407,9 +363,6 @@ function writeXmlResult(originalKubList, originalKc1, kubResult, ic, n) {
     return lines.join("\n");
 }
 
-/**
- * Форматирование вывода ФЗ для панелей
- */
 function formatFdsList(cubes, n, startNumber = 1) {
     let html = '';
     for (let i = 0; i < cubes.length; i++) {
@@ -425,10 +378,6 @@ function formatFdsList(cubes, n, startNumber = 1) {
     return html;
 }
 
-// ============================================================
-// ГРАФИЧЕСКИЙ ИНТЕРФЕЙС
-// ============================================================
-
 function updateUI() {
     const btnSave = document.getElementById('btnSave');
     const btnSaveAs = document.getElementById('btnSaveAs');
@@ -442,7 +391,6 @@ function updateUI() {
         btnSave.disabled = false;
         btnSaveAs.disabled = false;
         
-        // Отображаем исходные ФЗ
         const leftHtml = `<div class="scrollable">
             <div class="fd-item"><strong>Файл: ${appState.currentFile?.name || 'загружен'}</strong></div>
             <div class="fd-item"><strong>Количество атрибутов (N): ${appState.originalN}</strong></div>
@@ -484,10 +432,23 @@ function updateUI() {
         `Результат не сохранён. Файл: ${appState.currentFile?.name || 'не загружен'}`;
 }
 
+// ============================================================
+// ИСПРАВЛЕННАЯ ФУНКЦИЯ OPENFILE
+// ============================================================
 async function openFile() {
     const fileInput = document.getElementById('fileInput');
+    if (!fileInput) {
+        console.error("fileInput not found");
+        return;
+    }
+    
+    // Очищаем предыдущее значение
+    fileInput.value = '';
+    
+    // Открываем диалог выбора файла
     fileInput.click();
     
+    // Обработчик выбора файла
     fileInput.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -502,35 +463,12 @@ async function openFile() {
             appState.closureResult = null;
             appState.resultSaved = true;
             updateUI();
+            document.getElementById('statusBar').textContent = `Файл загружен: ${file.name}`;
         } catch (err) {
             document.getElementById('statusBar').textContent = `Ошибка: ${err.message}`;
             console.error(err);
         }
-        fileInput.value = '';
     };
-}
-
-function calculate() {
-    if (!appState.originalKubList) {
-        alert("Сначала откройте файл с исходными данными.");
-        return;
-    }
-    
-    document.getElementById('statusBar').textContent = "Вычисление замыкания...";
-    
-    setTimeout(() => {
-        try {
-            const { kub, ic } = kimpl1(appState.originalKubList, appState.originalN, appState.originalKc1);
-            appState.closureCubes = kub;
-            appState.closureResult = kub;
-            appState.resultSaved = false;
-            updateUI();
-            document.getElementById('statusBar').textContent = `Вычисление завершено. Всего ФЗ: ${ic}`;
-        } catch (err) {
-            document.getElementById('statusBar').textContent = `Ошибка: ${err.message}`;
-            console.error(err);
-        }
-    }, 10);
 }
 
 function saveToFile(filename, content) {
@@ -590,6 +528,29 @@ function saveAsFile() {
     };
     
     fakeInput.click();
+}
+
+function calculate() {
+    if (!appState.originalKubList) {
+        alert("Сначала откройте файл с исходными данными.");
+        return;
+    }
+    
+    document.getElementById('statusBar').textContent = "Вычисление замыкания...";
+    
+    setTimeout(() => {
+        try {
+            const { kub, ic } = kimpl1(appState.originalKubList, appState.originalN, appState.originalKc1);
+            appState.closureCubes = kub;
+            appState.closureResult = kub;
+            appState.resultSaved = false;
+            updateUI();
+            document.getElementById('statusBar').textContent = `Вычисление завершено. Всего ФЗ: ${ic}`;
+        } catch (err) {
+            document.getElementById('statusBar').textContent = `Ошибка: ${err.message}`;
+            console.error(err);
+        }
+    }, 10);
 }
 
 // Инициализация интерфейса
